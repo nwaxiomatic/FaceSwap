@@ -46,6 +46,12 @@ class FaceRenderer:
 
         self.mesh = mesh
 
+    def set_faceTexture(self, textureImg, textureCoords):
+        self.textureCoords = textureCoords
+        self.textureCoords[0, :] /= textureImg.shape[1] 
+        self.textureCoords[1, :] /= textureImg.shape[0]
+        self.faceTexture = addTexture(textureImg)
+
     def drawFace(self, vertices):
         glBindTexture(GL_TEXTURE_2D, self.faceTexture) 
 

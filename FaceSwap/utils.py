@@ -30,14 +30,17 @@ def fixMeshWinding(mesh, vertices):
 
     return mesh
 
-def getShape3D(mean3DShape, blendshapes, params):
+def getShape3D(mean3DShape, blendshapes, params, texParams=None):
     #skalowanie
     s = params[0]
     #rotacja
     r = params[1:4]
     #przesuniecie (translacja)
     t = params[4:6]
-    w = params[6:]
+    if texParams is not None:
+        w = texParams[6:]
+    else:
+        w = params[6:]
 
     #macierz rotacji z wektora rotacji, wzor Rodriguesa
     R = cv2.Rodrigues(r)[0]
