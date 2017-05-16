@@ -4,6 +4,9 @@ import dlib
 import cv2
 import numpy as np
 
+import time
+import math
+
 import models
 import NonLinearLeastSquares
 import ImageProcessing
@@ -38,6 +41,7 @@ drawOverlay = False
 cap = cv2.VideoCapture(0)
 writer = None
 cameraImg = cap.read()[1]
+together = None
 
 textureImg = cv2.imread(image_name)
 textureCoords = utils.getFaceTextureCoords(textureImg, mean3DShape, blendshapes, idxs2D, idxs3D, detector, predictor)
@@ -47,9 +51,10 @@ texShapes2D = utils.getFaceKeypoints(textureImg, detector, predictor, maxImageSi
 
 while True:
     cameraImg = cap.read()[1]
+    webcamImg = np.copy(cameraImg)
     shapes2D = utils.getFaceKeypoints(cameraImg, detector, predictor, maxImageSizeForDetection)
 
-    if shapes2D is not None:
+    if shapes2D is not None and texShapes2D is not None:
         for idx, shape2D in enumerate(shapes2D):
             #3D model parameter initialization
             modelParams = projectionModel.getInitialParameters(mean3DShape[:, idxs3D], shape2D[:, idxs2D])
@@ -64,7 +69,8 @@ while True:
             #rendering the model to an image
             textureCoords = utils.getFaceTextureCoords(cameraImg, mean3DShape, blendshapes, idxs2D, idxs3D, detector, predictor)
             renderer.set_faceTexture(cameraImg, textureCoords)
-            shape3D = utils.getShape3D(mean3DShape, blendshapes, modelParams, texModelParams)
+            t = (1+math.sin(2*math.pi*time.time()/5))/2
+            shape3D = utils.getShape3D(mean3DShape, blendshapes, modelParams, texModelParams, t)
             renderedImg = renderer.render(shape3D)
 
             #blending of the rendered face with the image
@@ -77,9 +83,16 @@ while True:
             if drawOverlay:
                 drawPoints(cameraImg, shape2D.T)
                 drawProjectedShape(cameraImg, [mean3DShape, blendshapes], projectionModel, mesh, modelParams, lockedTranslation)
+                drawPoints(renderedImg, texShapes2D[idx].T)
+                drawProjectedShape(renderedImg, [mean3DShape, blendshapes], projectionModel, mesh, texModelParams, lockedTranslation)
+
+            height, width, channels = cameraImg.shape
+            cameraImg = cameraImg[0:height , (width-height)/2:(width+height)/2, :]
+            webcamImg = webcamImg[0:height , (width-height)/2:(width+height)/2, :]
+            together = np.concatenate((cameraImg, webcamImg), axis=1)
 
     if writer is not None:
-        writer.write(cameraImg)
+        writer.write(together)
 
     cv2.imshow('image', cameraImg)
     key = cv2.waitKey(1)

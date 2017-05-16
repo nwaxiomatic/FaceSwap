@@ -30,7 +30,7 @@ def fixMeshWinding(mesh, vertices):
 
     return mesh
 
-def getShape3D(mean3DShape, blendshapes, params, texParams=None):
+def getShape3D(mean3DShape, blendshapes, params, texParams=None, interpolate=None):
     #skalowanie
     s = params[0]
     #rotacja
@@ -38,7 +38,11 @@ def getShape3D(mean3DShape, blendshapes, params, texParams=None):
     #przesuniecie (translacja)
     t = params[4:6]
     if texParams is not None:
-        w = texParams[6:]
+        if interpolate is not None:
+            interpolate = max(min(interpolate, 1), 0)
+            w = interpolate*params[6:] + (1-interpolate)*texParams[6:]
+        else:
+            w = texParams[6:]
     else:
         w = params[6:]
 
