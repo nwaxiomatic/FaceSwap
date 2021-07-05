@@ -18,7 +18,7 @@ print "Press R to start recording to a video file"
 #http://sourceforge.net/projects/dclib/files/dlib/v18.10/shape_predictor_68_face_landmarks.dat.bz2
 
 #loading the keypoint detection model, the image and the 3D model
-predictor_path = "../shape_predictor_68_face_landmarks.dat"
+predictor_path = "shape_predictor_68_face_landmarks.dat"
 image_name = "../data/jolie.jpg"
 #the smaller this value gets the faster the detection will work
 #if it is too small, the user's face might not be detected
@@ -37,6 +37,8 @@ cap = cv2.VideoCapture(0)
 writer = None
 cameraImg = cap.read()[1]
 
+i = 0
+
 textureImg = cv2.imread(image_name)
 textureCoords = utils.getFaceTextureCoords(textureImg, mean3DShape, blendshapes, idxs2D, idxs3D, detector, predictor)
 renderer = FaceRendering.FaceRenderer(cameraImg, textureImg, textureCoords, mesh)
@@ -46,7 +48,7 @@ while True:
     shapes2D = utils.getFaceKeypoints(cameraImg, detector, predictor, maxImageSizeForDetection)
 
     if shapes2D is not None:
-        for shape2D in shapes2D:
+        for idx, shape2D in enumerate(shapes2D):
             #3D model parameter initialization
             modelParams = projectionModel.getInitialParameters(mean3DShape[:, idxs3D], shape2D[:, idxs2D])
 
@@ -59,6 +61,15 @@ while True:
 
             #blending of the rendered face with the image
             mask = np.copy(renderedImg[:, :, 0])
+            """
+            if i = 10:
+                f = open('output.txt', 'w')
+                for line in mask:
+                    f.write()  # python will convert \n to os.linesep
+                f.close()
+            """
+            #print idx
+            #print shape3D
             renderedImg = ImageProcessing.colorTransfer(cameraImg, renderedImg, mask)
             cameraImg = ImageProcessing.blendImages(renderedImg, cameraImg, mask)
        

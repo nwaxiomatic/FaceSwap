@@ -30,21 +30,14 @@ def fixMeshWinding(mesh, vertices):
 
     return mesh
 
-def getShape3D(mean3DShape, blendshapes, params, texParams=None, interpolate=None):
+def getShape3D(mean3DShape, blendshapes, params):
     #skalowanie
     s = params[0]
     #rotacja
     r = params[1:4]
     #przesuniecie (translacja)
     t = params[4:6]
-    if texParams is not None:
-        if interpolate is not None:
-            interpolate = max(min(interpolate, 1), 0)
-            w = interpolate*params[6:] + (1-interpolate)*texParams[6:]
-        else:
-            w = texParams[6:]
-    else:
-        w = params[6:]
+    w = params[6:]
 
     #macierz rotacji z wektora rotacji, wzor Rodriguesa
     R = cv2.Rodrigues(r)[0]
@@ -57,6 +50,7 @@ def getShape3D(mean3DShape, blendshapes, params, texParams=None, interpolate=Non
 
 def getMask(renderedImg):
     mask = np.zeros(renderedImg.shape[:2], dtype=np.uint8)
+    print mask
 
 def load3DFaceModel(filename):
     faceModelFile = np.load(filename)
@@ -84,7 +78,7 @@ def getFaceKeypoints(img, detector, predictor, maxImgSizeForDetection=640):
         return None
 
     shapes2D = []
-    for det in dets:
+    for idd, det in enumerate(dets):
         faceRectangle = rectangle(int(det.left() / imgScale), int(det.top() / imgScale), int(det.right() / imgScale), int(det.bottom() / imgScale))
 
         #detekcja punktow charakterystycznych twarzy
@@ -92,8 +86,14 @@ def getFaceKeypoints(img, detector, predictor, maxImgSizeForDetection=640):
         
         shape2D = np.array([[p.x, p.y] for p in dlibShape.parts()])
         #transpozycja, zeby ksztalt byl 2 x n a nie n x 2, pozniej ulatwia to obliczenia
-        shape2D = shape2D.T
 
+        averages = [0] * 8
+        for idy in range(0, 8):
+            averages[idy] = (shape2D[idy+60] + shape2D[60 + (8-idy) % 8])/2
+        for idx, thing in enumerate(shape2D):
+            if idx > 59:
+                shape2D[idx] = averages[idx-60]
+        shape2D = shape2D.T
         shapes2D.append(shape2D)
 
     return shapes2D
